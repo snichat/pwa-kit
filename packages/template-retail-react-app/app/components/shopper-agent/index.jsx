@@ -375,6 +375,15 @@ const ShopperAgentWindow = ({commerceAgentConfiguration, domainUrl}) => {
             applyHiddenPrechatFields()
         }
 
+        const handleSessionInitError = (error, context) => {
+            console.error(`Shopper Agent: ${context}`, error)
+            resetEmbeddedMessagingForCommerceSessionChange()
+            toastRef.current({
+                title: formatMessageRef.current(SESSION_INIT_ERROR_MESSAGE),
+                status: 'error'
+            })
+        }
+
         const handleEmbeddedMessagingConversationStarted = (event) => {
             const {organizationId: orgId, configSiteId: sid} = embeddedLifecycleRef.current
             if (!orgId || !sid) return
@@ -386,7 +395,10 @@ const ShopperAgentWindow = ({commerceAgentConfiguration, domainUrl}) => {
             const getAuthLinkKey =
                 window.embeddedservice_bootstrap?.userVerificationAPI?.getAuthLinkKey
             if (typeof getAuthLinkKey !== 'function') {
-                console.error('Shopper Agent: getAuthLinkKey is not available')
+                handleSessionInitError(
+                    new Error('getAuthLinkKey is not available'),
+                    'getAuthLinkKey is not available'
+                )
                 return
             }
 
@@ -411,30 +423,16 @@ const ShopperAgentWindow = ({commerceAgentConfiguration, domainUrl}) => {
                                 )
                             },
                             onError: (error) => {
-                                console.error(
-                                    'postSessionInit failed onEmbeddedMessagingConversationStarted',
-                                    {
-                                        organizationId: orgId,
-                                        siteId: sid,
-                                        error
-                                    }
+                                handleSessionInitError(
+                                    error,
+                                    'postSessionInit failed onEmbeddedMessagingConversationStarted'
                                 )
-                                // Close the chat if session initialization fails
-                                resetEmbeddedMessagingForCommerceSessionChange()
-                                toastRef.current({
-                                    title: formatMessageRef.current(SESSION_INIT_ERROR_MESSAGE),
-                                    status: 'error'
-                                })
                             }
                         }
                     )
                 })
                 .catch((error) => {
-                    console.error('Shopper Agent: getAuthLinkKey failed', error)
-                    toastRef.current({
-                        title: formatMessageRef.current(SESSION_INIT_ERROR_MESSAGE),
-                        status: 'error'
-                    })
+                    handleSessionInitError(error, 'getAuthLinkKey failed')
                 })
         }
 
