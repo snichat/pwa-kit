@@ -541,6 +541,40 @@ describe('ShopperAgent Component', () => {
         global.window.embeddedservice_bootstrap = mockEmbeddedService
     })
 
+    test('should show error toast when getAuthLinkKey Promise rejects', async () => {
+        const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
+        const bootstrapWithRejection = {
+            ...mockEmbeddedService,
+            userVerificationAPI: {
+                ...mockEmbeddedService.userVerificationAPI,
+                getAuthLinkKey: jest.fn().mockRejectedValue(new Error('getAuthLinkKey failed'))
+            }
+        }
+        global.window.embeddedservice_bootstrap = bootstrapWithRejection
+
+        render(<ShopperAgent {...defaultProps} />)
+
+        await act(async () => {
+            window.dispatchEvent(new Event('onEmbeddedMessagingConversationStarted'))
+        })
+
+        // Wait for Promise rejection to be handled
+        await act(async () => {
+            await Promise.resolve()
+        })
+
+        expect(errorSpy).toHaveBeenCalledWith(
+            'Shopper Agent: getAuthLinkKey failed',
+            expect.any(Error)
+        )
+        expect(mockShowToast).toHaveBeenCalledTimes(1)
+        expect(mockShowToast.mock.calls[0][0].status).toBe('error')
+        expect(mockPostSessionInitMutate).not.toHaveBeenCalled()
+
+        errorSpy.mockRestore()
+        global.window.embeddedservice_bootstrap = mockEmbeddedService
+    })
+
     test('should not call postSessionInit mutation when organizationId or siteId is missing', async () => {
         mockedUseConfig.mockReturnValue({
             organizationId: '',

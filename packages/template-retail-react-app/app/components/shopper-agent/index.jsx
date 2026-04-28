@@ -431,6 +431,10 @@ const ShopperAgentWindow = ({commerceAgentConfiguration, domainUrl}) => {
                 })
                 .catch((error) => {
                     console.error('Shopper Agent: getAuthLinkKey failed', error)
+                    toastRef.current({
+                        title: formatMessageRef.current(SESSION_INIT_ERROR_MESSAGE),
+                        status: 'error'
+                    })
                 })
         }
 
